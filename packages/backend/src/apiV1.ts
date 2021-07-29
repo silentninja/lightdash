@@ -14,6 +14,7 @@ import { getHealthState } from './health';
 import { UserModel } from './models/User';
 import { AuthorizationError, ParameterError } from './errors';
 import { OrgModel } from './models/Org';
+import { SavedQueriesModel } from './models/SavedQueries';
 import { lightdashConfig } from './config/lightdashConfig';
 
 export const apiV1Router = express.Router();
@@ -74,12 +75,11 @@ apiV1Router.post('/register', unauthorisedInDemo, async (req, res, next) => {
         isMarketingOptedIn: !!req.body.isMarketingOptedIn,
         isTrackingAnonymized: !!req.body.isTrackingAnonymized,
     })
-        .then((user) => {
+        .then(() =>
             res.json({
                 status: 'ok',
-                results: user,
-            });
-        })
+            }),
+        )
         .catch(next);
 });
 
@@ -90,7 +90,6 @@ apiV1Router.post('/login', passport.authenticate('local'), (req, res, next) => {
         } else {
             res.json({
                 status: 'ok',
-                results: UserModel.lightdashUserFromSession(req.user!),
             });
         }
     });
@@ -112,7 +111,7 @@ apiV1Router.get('/logout', (req, res, next) => {
 apiV1Router.get('/user', isAuthenticated, async (req, res) => {
     res.json({
         status: 'ok',
-        results: UserModel.lightdashUserFromSession(req.user!),
+        results: req.user,
     });
 });
 
@@ -120,7 +119,7 @@ apiV1Router.patch(
     '/user/me',
     isAuthenticated,
     unauthorisedInDemo,
-    async (req, res, next) => {
+    async (req, res, next) =>
         UserModel.updateProfile(req.user!.userId, req.user!.email, req.body)
             .then((user) => {
                 res.json({
@@ -128,8 +127,7 @@ apiV1Router.patch(
                     results: user,
                 });
             })
-            .catch(next);
-    },
+            .catch(next),
 );
 
 apiV1Router.post(
@@ -159,9 +157,10 @@ apiV1Router.patch(
     unauthorisedInDemo,
     async (req, res, next) =>
         OrgModel.updateOrg(req.user!.organizationUuid, req.body)
-            .then(() => {
+            .then((user) => {
                 res.json({
                     status: 'ok',
+                    results: user,
                 });
             })
             .catch(next),
@@ -261,3 +260,58 @@ apiV1Router.get('/status', isAuthenticated, async (req, res, next) => {
         })
         .catch(next);
 });
+
+apiV1Router.get('/spaces', isAuthenticated, async (req, res, next) => {
+    SavedQueriesModel.getAllSpaces()
+        .then((results) => {
+            res.json({
+                status: 'ok',
+                results,
+            });
+        })
+        .catch(next);
+});
+
+apiV1Router.get(
+    '/saved/:savedQueryUuid',
+    isAuthenticated,
+    async (req, res, next) => {
+        SavedQueriesModel.getById(req.params.savedQueryUuid)
+            .then((results) => {
+                res.json({
+                    status: 'ok',
+                    results,
+                });
+            })
+            .catch(next);
+    },
+);
+
+apiV1Router.post('/saved', isAuthenticated, async (req, res, next) => {
+    SavedQueriesModel.create(req.body.savedQuery)
+        .then((results) => {
+            res.json({
+                status: 'ok',
+                results,
+            });
+        })
+        .catch(next);
+});
+
+apiV1Router.post(
+    '/saved/:savedQueryUuid/version',
+    isAuthenticated,
+    async (req, res, next) => {
+        SavedQueriesModel.addVersion(
+            req.params.savedQueryUuid,
+            req.body.savedQuery,
+        )
+            .then((results) => {
+                res.json({
+                    status: 'ok',
+                    results,
+                });
+            })
+            .catch(next);
+    },
+);

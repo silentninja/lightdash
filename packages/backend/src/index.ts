@@ -13,7 +13,6 @@ import { apiV1Router } from './apiV1';
 import { refreshAllTables } from './lightdash';
 import { UserModel } from './models/User';
 import database from './database/database';
-import { lightdashConfig } from './config/lightdashConfig';
 
 const KnexSessionStore = connectSessionKnex(expressSession);
 
@@ -33,12 +32,9 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(
     expressSession({
-        secret: lightdashConfig.lightdashSecret,
+        secret: 'lightdash session',
         cookie: {
             maxAge: 86400000, // 1 day
-            secure: lightdashConfig.secureCookies,
-            httpOnly: true,
-            sameSite: 'lax',
         },
         resave: false,
         saveUninitialized: false,
@@ -108,6 +104,6 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser(async (id: string, done) => {
-    const user = await UserModel.findSessionUserByUUID(id);
+    const user = await UserModel.findById(id);
     done(null, user);
 });

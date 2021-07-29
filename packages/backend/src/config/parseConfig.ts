@@ -53,16 +53,8 @@ export type LightdashConfigIn = {
 
 export type LightdashConfig = {
     version: '1.0';
-    lightdashSecret: string;
-    secureCookies: boolean;
-    rudder: RudderConfig;
     mode: LightdashMode;
     projects: Array<DbtProjectConfig>;
-};
-
-export type RudderConfig = {
-    writeKey: string;
-    dataPlaneUrl: string;
 };
 
 const dbtLocalProjectConfigRequiredFields: Array<keyof DbtLocalProjectConfig> =
@@ -125,26 +117,9 @@ const mergeWithEnvironment = (config: LightdashConfigIn): LightdashConfig => {
             }
         }
     });
-    const lightdashSecret = process.env.LIGHTDASH_SECRET;
-    if (!lightdashSecret) {
-        throw new ParseError(
-            `Must specify environment variable LIGHTDASH_SECRET. Keep this value hidden!`,
-            {},
-        );
-    }
     return {
         ...config,
         projects: mergedProjects,
-        rudder: {
-            writeKey:
-                process.env.RUDDERSTACK_WRITE_KEY ||
-                '1vqkSlWMVtYOl70rk3QSE0v1fqY',
-            dataPlaneUrl:
-                process.env.RUDDERSTACK_DATA_PLANE_URL ||
-                'https://analytics.lightdash.com',
-        },
-        lightdashSecret,
-        secureCookies: process.env.SECURE_COOKIES === 'true',
     };
 };
 

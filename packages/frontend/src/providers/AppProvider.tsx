@@ -5,7 +5,6 @@ import React, {
     useEffect,
     useCallback,
 } from 'react';
-import * as rudderSDK from 'rudder-sdk-js';
 import { ApiError, ApiHealthResults, HealthState, LightdashUser } from 'common';
 import { useQuery } from 'react-query';
 import { IToastProps } from '@blueprintjs/core/src/components/toast/toast';
@@ -13,7 +12,6 @@ import { Intent } from '@blueprintjs/core';
 import { UseQueryResult } from 'react-query/types/react/types';
 import { lightdashApi } from '../api';
 import { AppToaster } from '../components/AppToaster';
-import { useRudder } from '../hooks/useRudder';
 
 const getHealthState = async () =>
     lightdashApi<ApiHealthResults>({
@@ -40,11 +38,6 @@ interface AppContext {
     user: UseQueryResult<LightdashUser, ApiError>;
     showMessage: (props: Message) => void;
     showError: (props: Message) => void;
-    rudder: {
-        page: typeof rudderSDK.page;
-        track: typeof rudderSDK.track;
-        identify: typeof rudderSDK.identify;
-    };
 }
 
 const Context = createContext<AppContext>(undefined as any);
@@ -93,19 +86,11 @@ export const AppProvider: FC = ({ children }) => {
         [showMessage],
     );
 
-    const rudder = useRudder(
-        health.data?.mode,
-        health.data?.version,
-        health.data?.rudder.writeKey,
-        health.data?.rudder.dataPlaneUrl,
-    );
-
     const value = {
         health,
         user,
         showMessage,
         showError,
-        rudder,
     };
 
     useEffect(() => {

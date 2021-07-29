@@ -18,10 +18,6 @@ import {
 import { ParseError } from '../errors';
 import { parseConfig } from './parseConfig';
 
-beforeAll(() => {
-    process.env.LIGHTDASH_SECRET = 'not very secret';
-});
-
 test('Should throw ParseError for undefined config', () => {
     expect(() => parseConfig(UNDEFINED_CONFIG)).toThrowError(ParseError);
 });
@@ -44,14 +40,12 @@ test('Should throw ParseError for unrecognised project', () => {
 
 test('Should parse valid local project config', () => {
     const expected = wrapProject(LOCAL_PROJECT);
-    expect(parseConfig(expected).projects).toEqual(expected.projects);
+    expect(parseConfig(expected)).toEqual(expected);
 });
 
 test('Should parse local project without port', () => {
     const expected = wrapProject(LOCAL_PROJECT);
-    expect(parseConfig(wrapProject(LOCAL_PROJECT_NO_PORT)).projects).toEqual(
-        expected.projects,
-    );
+    expect(parseConfig(wrapProject(LOCAL_PROJECT_NO_PORT))).toEqual(expected);
 });
 
 test('Should throw ParseError for local project with string port', () => {
@@ -85,12 +79,12 @@ test('Should parse local config merged with environment variable', () => {
     });
     const actual = wrapProject(LOCAL_PROJECT_MISSING_PROFILES_DIR);
     process.env.LIGHTDASH_PROJECT_0_PROFILES_DIR = LOCAL_PROJECT.profiles_dir;
-    expect(parseConfig(actual).projects).toEqual(expected.projects);
+    expect(parseConfig(actual)).toEqual(expected);
 });
 
 test('Should parse valid remote project config', () => {
     const expected = wrapProject(REMOTE_PROJECT);
-    expect(parseConfig(expected).projects).toEqual(expected.projects);
+    expect(parseConfig(expected)).toEqual(expected);
 });
 
 test('Should throw ParseError for invalid hostname', () => {
@@ -101,29 +95,5 @@ test('Should throw ParseError for invalid hostname', () => {
 
 test('Should parse dbt cloud ide config', () => {
     const expected = wrapProject(DBT_CLOUD_IDE_PROJECT);
-    expect(parseConfig(expected).projects).toEqual(expected.projects);
-});
-
-test('Should parse rudder config from env', () => {
-    const expected = {
-        dataPlaneUrl: 'customurl',
-        writeKey: 'customkey',
-    };
-    process.env.RUDDERSTACK_DATA_PLANE_URL = 'customurl';
-    process.env.RUDDERSTACK_WRITE_KEY = 'customkey';
-    expect(parseConfig(wrapProject(LOCAL_PROJECT)).rudder).toEqual(expected);
-});
-
-test('Should throw error when secret missing', () => {
-    delete process.env.LIGHTDASH_SECRET;
-    expect(() => parseConfig(wrapProject(LOCAL_PROJECT))).toThrowError(
-        ParseError,
-    );
-});
-
-test('Should include secret in output', () => {
-    process.env.LIGHTDASH_SECRET = 'so very secret';
-    expect(parseConfig(wrapProject(LOCAL_PROJECT)).lightdashSecret).toEqual(
-        'so very secret',
-    );
+    expect(parseConfig(expected)).toEqual(expected);
 });

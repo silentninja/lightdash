@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { FC, useRef, useState } from 'react';
 import {
     Button,
     ButtonGroup,
@@ -6,12 +6,15 @@ import {
     Collapse,
     FormGroup,
     H5,
+    Menu,
+    MenuItem,
     NumericInput,
     Tag,
 } from '@blueprintjs/core';
+import { Popover2 } from '@blueprintjs/popover2';
+import { SavedQuery } from 'common';
 import EChartsReact from 'echarts-for-react';
 import { FiltersForm } from '../filters/FiltersForm';
-import { useExploreConfig } from '../hooks/useExploreConfig';
 import { ResultsTable } from './ResultsTable';
 import { ChartType, SimpleChart } from './SimpleChart';
 import { RenderedSql } from './RenderedSql';
@@ -21,24 +24,59 @@ import { ChartConfigPanel } from './ChartConfigPanel';
 import { useQueryResults } from '../hooks/useQueryResults';
 import { useChartConfig } from '../hooks/useChartConfig';
 import { ChartDownloadMenu } from './ChartDownload';
+import { useExplorer } from '../providers/ExplorerProvider';
+import { CreateSavedQueryModal } from './SaveQueryModal';
+import { useAddVersionMutation, useSavedQuery } from '../hooks/useSavedQuery';
 
-export const Explorer = () => {
+interface Props {
+    savedQueryId?: string;
+}
+
+export const Explorer: FC<Props> = ({ savedQueryId }) => {
+    const [isQueryModalOpen, setIsQueryModalOpen] = useState<boolean>(false);
     const chartRef = useRef<EChartsReact>(null);
-    const { activeFilters, resultsRowLimit, setResultsRowLimit } =
-        useExploreConfig();
+    const {
+        state: { tableName, dimensions, metrics, sorts, limit, filters },
+        actions: { setRowLimit: setResultsRowLimit },
+    } = useExplorer();
     // queryResults are used here for prop-drill because the keepPreviousData: true option doesn't persist when
     // child components unmount: https://github.com/tannerlinsley/react-query/issues/2363
     const queryResults = useQueryResults();
     const chartConfig = useChartConfig(queryResults);
+    const get = useSavedQuery({ id: savedQueryId });
+    const update = useAddVersionMutation();
 
     const [filterIsOpen, setFilterIsOpen] = useState<boolean>(false);
     const [resultsIsOpen, setResultsIsOpen] = useState<boolean>(true);
     const [sqlIsOpen, setSqlIsOpen] = useState<boolean>(false);
     const [vizIsOpen, setVizisOpen] = useState<boolean>(false);
-    const totalActiveFilters = activeFilters
+    const totalActiveFilters = filters
         .flatMap((filterGroup) => filterGroup.filters.length)
         .reduce((p, t) => p + t, 0);
     const [activeVizTab, setActiveVizTab] = useState<ChartType>('column');
+
+    const queryData: Omit<SavedQuery, 'uuid' | 'name'> | undefined = tableName
+        ? {
+              tableName,
+              metricQuery: {
+                  dimensions,
+                  metrics,
+                  sorts,
+                  filters,
+                  limit,
+              },
+              chartConfig: {},
+          }
+        : undefined;
+
+    const handleSavedQueryUpdate = () => {
+        if (savedQueryId && get.data && queryData) {
+            update.mutate({
+                uuid: savedQueryId,
+                data: queryData,
+            });
+        }
+    };
 
     const isChartEmpty: boolean = !chartConfig.plotData;
     return (
@@ -52,6 +90,34 @@ export const Explorer = () => {
             >
                 <RefreshButton queryResults={queryResults} />
                 <RefreshServerButton />
+                <Popover2
+                    content={
+                        <Menu>
+                            {savedQueryId && (
+                                <MenuItem
+                                    icon="saved"
+                                    text="Save"
+                                    onClick={handleSavedQueryUpdate}
+                                />
+                            )}
+                            <MenuItem
+                                icon="add"
+                                text="Save as"
+                                onClick={() => setIsQueryModalOpen(true)}
+                            />
+                        </Menu>
+                    }
+                    placement="bottom"
+                >
+                    <Button
+                        icon="more"
+                        style={{
+                            height: 40,
+                            width: 40,
+                            marginLeft: '10px',
+                        }}
+                    />
+                </Popover2>
             </div>
             <div style={{ paddingTop: '10px' }} />
             <Card style={{ padding: 5 }} elevation={1}>
@@ -191,9 +257,9 @@ export const Explorer = () => {
                                 style={{ width: 100 }}
                                 min={0}
                                 buttonPosition="none"
-                                value={resultsRowLimit}
-                                onValueChange={(valueAsNumber, valueAsString) =>
-                                    setResultsRowLimit(valueAsString)
+                                value={limit}
+                                onValueChange={(valueAsNumber) =>
+                                    setResultsRowLimit(valueAsNumber)
                                 }
                             />
                         </FormGroup>
@@ -226,6 +292,13 @@ export const Explorer = () => {
                     <RenderedSql />
                 </Collapse>
             </Card>
+            {queryData && (
+                <CreateSavedQueryModal
+                    isOpen={isQueryModalOpen}
+                    queryData={queryData}
+                    onClose={() => setIsQueryModalOpen(false)}
+                />
+            )}
         </>
     );
 };

@@ -3,7 +3,9 @@ import fetch from 'node-fetch';
 import database from './database/database';
 import { hasUsers } from './database/entities/users';
 import { lightdashConfig } from './config/lightdashConfig';
-import { VERSION } from './version';
+
+// Cannot be `import` as it's not under TS root dir
+const { version: VERSION } = require('../package.json');
 
 const filterByName = (result: { name: string }): boolean =>
     new RegExp('[0-9.]+$').test(result.name);
@@ -37,6 +39,5 @@ export const getHealthState = async (
         needsSetup: !(await hasUsers(database)),
         isAuthenticated,
         latest: { version: latestVersion },
-        rudder: lightdashConfig.rudder,
     };
 };

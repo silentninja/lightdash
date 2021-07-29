@@ -39,12 +39,6 @@ Lightdash is a BI tool that is fully integrated with your dbt project, allowing 
 * [x] 📊 Simple data visualisations for your metrics
 * [x] 🚀 Share your work as a URL or export results to use in any other tool
 
-## 1-click deploy
-
-Deploy your own hosted Lightdash instance with Heroku (free account available). _This is currently only supported for dbt cloud projects_.
-
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/lightdash/lightdash-deploy-heroku)
-
 ## Get started
 
 Start learning Lightdash:
@@ -56,6 +50,7 @@ Start learning Lightdash:
 
 ## Community Support
 Join our community if you need help, want to chat or have any other questions for us:
+- [Discord](https://discord.gg/WnPB98Wk) - Live chat with the Lightdash team and our community members
 - [Discourse](https://community.lightdash.com/) - Discussion forums and updates from the Lightdash team
 - [Twitter](https://twitter.com/lightdash_devs) - For all the latest Lightdash news
 

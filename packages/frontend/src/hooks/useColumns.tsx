@@ -8,8 +8,8 @@ import {
     SortField,
 } from 'common';
 import React, { useMemo } from 'react';
-import { useExploreConfig } from './useExploreConfig';
 import { useTable } from './useTable';
+import { useExplorer } from '../providers/ExplorerProvider';
 
 const formatDate = (date: string | Date) =>
     new Date(date).toISOString().slice(0, 10);
@@ -73,7 +73,10 @@ const getSortByProps = (
 };
 export const useColumns = () => {
     const activeExplore = useTable();
-    const { activeFields, sortFields, toggleSortField } = useExploreConfig();
+    const {
+        state: { activeFields, sorts: sortFields },
+        actions: { toggleSortField },
+    } = useExplorer();
     const dimensions = useMemo(
         () =>
             activeExplore.data

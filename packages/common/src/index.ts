@@ -529,6 +529,13 @@ export type ApiRegisterResponse =
           results: undefined;
       };
 
+export type ApiSpacesResponse =
+    | ApiError
+    | {
+          status: 'ok';
+          results: Space[];
+      };
+
 export interface LightdashUser {
     userUuid: string;
     email: string | undefined;
@@ -583,7 +590,9 @@ export type ApiResults =
     | ApiStatusResults
     | ApiRefreshResults
     | ApiHealthResults
-    | LightdashUser;
+    | LightdashUser
+    | SavedQuery
+    | Space[];
 
 export type ApiResponse =
     | ApiQueryResponse
@@ -595,7 +604,8 @@ export type ApiResponse =
     | ApiRefreshResponse
     | ApiHealthResponse
     | ApiUserResponse
-    | ApiRegisterResponse;
+    | ApiRegisterResponse
+    | ApiSpacesResponse;
 
 export enum LightdashMode {
     DEFAULT = 'default',
@@ -611,10 +621,6 @@ export type HealthState = {
     isAuthenticated: boolean;
     latest: {
         version?: string;
-    };
-    rudder: {
-        writeKey: string;
-        dataPlaneUrl: string;
     };
 };
 
@@ -702,3 +708,23 @@ export const isDbtRpcRunSqlResults = (
             'rows' in result.table &&
             Array.isArray(result.table.rows),
     );
+
+export type SavedQuery = {
+    uuid: string;
+    name: string;
+    tableName: string;
+    metricQuery: MetricQuery;
+    chartConfig: any;
+};
+
+export type SpaceQuery = Pick<SavedQuery, 'uuid' | 'name'>;
+
+export type Space = {
+    uuid: string;
+    name: string;
+    queries: SpaceQuery[];
+};
+
+export type CreateSavedQuery = Omit<SavedQuery, 'uuid'>;
+
+export type CreateSavedQueryVersion = Omit<SavedQuery, 'uuid' | 'name'>;
