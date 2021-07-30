@@ -5,6 +5,7 @@ import React, {
     useEffect,
     useCallback,
 } from 'react';
+import Markdown from 'markdown-to-jsx';
 import * as rudderSDK from 'rudder-sdk-js';
 import { ApiError, ApiHealthResults, HealthState, LightdashUser } from 'common';
 import { useQuery } from 'react-query';
@@ -70,8 +71,24 @@ export const AppProvider: FC = ({ children }) => {
                     timeout: 5000,
                     message: (
                         <div>
-                            <b>{title}</b>
-                            {subtitle && <p>{subtitle}</p>}
+                            <p style={{ fontWeight: 'bold', marginBottom: 0 }}>
+                                {title}
+                            </p>
+                            {subtitle && (
+                                <Markdown
+                                    options={{
+                                        overrides: {
+                                            a: {
+                                                props: {
+                                                    target: '_blank',
+                                                },
+                                            },
+                                        },
+                                    }}
+                                >
+                                    {subtitle}
+                                </Markdown>
+                            )}
                         </div>
                     ),
                     ...rest,
