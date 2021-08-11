@@ -1,4 +1,5 @@
 import moment from 'moment';
+import { InviteLink } from './models/InviteLink';
 
 const DATE_FORMAT = 'YYYY-MM-DD';
 export const formatDate = (date: Date): string =>
@@ -573,6 +574,12 @@ export type ApiHealthResponse =
           status: 'ok';
           results: ApiHealthResults;
       };
+export type ApiInviteLinkResponse =
+    | ApiError
+    | {
+          status: 'ok';
+          results: InviteLink;
+      };
 
 export type ApiResults =
     | ApiQueryResults
@@ -585,7 +592,8 @@ export type ApiResults =
     | ApiHealthResults
     | LightdashUser
     | SavedQuery
-    | Space[];
+    | Space[]
+    | InviteLink;
 
 export type ApiResponse =
     | ApiQueryResponse
@@ -597,7 +605,8 @@ export type ApiResponse =
     | ApiRefreshResponse
     | ApiHealthResponse
     | ApiUserResponse
-    | ApiRegisterResponse;
+    | ApiRegisterResponse
+    | ApiInviteLinkResponse;
 
 export enum LightdashMode {
     DEFAULT = 'default',
