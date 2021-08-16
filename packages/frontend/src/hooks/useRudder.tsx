@@ -47,7 +47,11 @@ export const useRudder = (
             );
         };
         const track: typeof rudderSDK.track = (event, properties) => {
-            rudderAnalytics?.track(event, properties, lightdashContext());
+            rudderAnalytics?.track(
+                `${lightdashApp.name}.${event}`,
+                properties,
+                lightdashContext(),
+            );
         };
         const identify: typeof rudderSDK.identify = (id, traits) => {
             if (lightdashMode && lightdashMode !== LightdashMode.DEMO) {

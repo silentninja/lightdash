@@ -20,7 +20,7 @@ export const RefreshButton = ({ queryResults }: RefreshButtonProps) => {
             style={{ height: '40px', width: 150, marginRight: '10px' }}
             onClick={() => {
                 refetch();
-                rudder.track('query_executed');
+                rudder.track('explorer_refresh_dbt_button.clicked');
             }}
             disabled={!isValidQuery}
             loading={isFetching}
