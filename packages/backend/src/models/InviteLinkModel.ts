@@ -1,5 +1,6 @@
 import { Knex } from 'knex';
-import bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
+import { InviteLink } from 'common/dist/models/InviteLink';
 import { NotExistsError } from '../errors';
 
 export class InviteLinkModel {
@@ -14,10 +15,7 @@ export class InviteLinkModel {
         expiresAt: Date,
         organizationUuid: string,
     ) {
-        const inviteCodeHash = await bcrypt.hash(
-            inviteCode,
-            await bcrypt.genSalt(),
-        );
+        const inviteCodeHash = InviteLinkModel._hash(inviteCode);
         const orgs = await this.database('organizations')
             .where('organization_uuid', organizationUuid)
             .select('*');
