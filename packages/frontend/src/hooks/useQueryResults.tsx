@@ -12,9 +12,9 @@ export const getQueryResults = async (tableId: string, query: MetricQuery) =>
         body: JSON.stringify(query),
     });
 
-export const useQueryResults = () => {
+export const useQueryResults = (pristine = true) => {
     const {
-        state: {
+        [pristine ? 'pristineState' : 'state']: {
             tableName: tableId,
             dimensions,
             metrics,
@@ -22,6 +22,7 @@ export const useQueryResults = () => {
             filters,
             limit,
         },
+        actions: { syncState },
     } = useExplorer();
     const {
         errorLogs: { showError },
@@ -41,6 +42,10 @@ export const useQueryResults = () => {
         enabled: false, // don't run automatically
         keepPreviousData: true, // changing the query won't update results until fetch
         retry: false,
+        onSuccess: (data) => {
+            // Update the pristine state once the query has been successfully fetched.
+            syncState();
+        },
     });
 
     useEffect(() => {

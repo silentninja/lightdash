@@ -5,6 +5,7 @@ import React, {
     useReducer,
     useMemo,
     useCallback,
+    useEffect,
 } from 'react';
 import { FieldId, FilterGroup, SortField } from 'common';
 
@@ -48,6 +49,14 @@ type Action =
           type: ActionType.SET_COLUMN_ORDER;
           payload: string[];
       };
+export enum DiffType {
+    Added,
+    Deleted,
+    Modified,
+    Pristine,
+}
+
+export type DiffState = { [key: string]: DiffType };
 
 interface ExplorerReduceState {
     tableName: string | undefined;
@@ -66,8 +75,10 @@ interface ExplorerState extends ExplorerReduceState {
 
 interface ExplorerContext {
     state: ExplorerState;
+    pristineState: ExplorerState;
     actions: {
         reset: () => void;
+        syncState: () => void;
         setState: (state: Required<ExplorerReduceState>) => void;
         setTableName: (tableName: string) => void;
         toggleActiveField: (fieldId: FieldId, isDimension: boolean) => void;
@@ -76,6 +87,7 @@ interface ExplorerContext {
         setRowLimit: (limit: number) => void;
         setFilters: (filters: FilterGroup[]) => void;
         setColumnOrder: (order: string[]) => void;
+        getFieldStatus: (fieldId: FieldId) => DiffType;
     };
 }
 
@@ -114,6 +126,51 @@ const calcColumnOrder = (
     );
     return [...cleanColumnOrder, ...missingColumns];
 };
+
+const differ = (pristine: any[], dirty: any[]): DiffState => {
+    const added = dirty
+        .filter((value) => !pristine.includes(value))
+        .reduce(
+            (accumulator, value) => ({
+                ...accumulator,
+                [value]: DiffType.Added,
+            }),
+            {},
+        );
+    const deleted = pristine
+        .filter((value) => !dirty.includes(value))
+        .reduce(
+            (accumulator, value) => ({
+                ...accumulator,
+                [value]: DiffType.Deleted,
+            }),
+            {},
+        );
+    return { ...added, ...deleted };
+};
+
+function pristineReducer(
+    state: ExplorerReduceState,
+    action: Action,
+): ExplorerReduceState {
+    switch (action.type) {
+        case ActionType.RESET: {
+            return defaultState;
+        }
+        case ActionType.SET_STATE: {
+            return {
+                ...action.payload,
+                columnOrder: calcColumnOrder(action.payload.columnOrder, [
+                    ...action.payload.dimensions,
+                    ...action.payload.metrics,
+                ]),
+            };
+        }
+        default: {
+            throw new Error(`Unhandled action type`);
+        }
+    }
+}
 
 function reducer(
     state: ExplorerReduceState,
@@ -243,6 +300,10 @@ function reducer(
 
 export const ExplorerProvider: FC = ({ children }) => {
     const [reducerState, dispatch] = useReducer(reducer, defaultState);
+    const [pristineReducerState, pristineDispatch] = useReducer(
+        pristineReducer,
+        defaultState,
+    );
 
     const [activeFields, isValidQuery] = useMemo<
         [Set<FieldId>, boolean]
@@ -253,14 +314,41 @@ export const ExplorerProvider: FC = ({ children }) => {
         ]);
         return [fields, fields.size > 0];
     }, [reducerState]);
+    const [pristineActiveFields, pristineIsValidQuery] = useMemo<
+        [Set<FieldId>, boolean]
+    >(() => {
+        const fields = new Set([
+            ...pristineReducerState.dimensions,
+            ...pristineReducerState.metrics,
+        ]);
+        return [fields, fields.size > 0];
+    }, [pristineReducerState]);
+    const activeFieldsDiff = useMemo<DiffState>(
+        () => differ([...pristineActiveFields], [...activeFields]),
+        [activeFields, pristineActiveFields],
+    );
+    const getFieldStatus = useCallback(
+        (fieldId: FieldId) => activeFieldsDiff[fieldId] ?? DiffType.Pristine,
+        [activeFieldsDiff],
+    );
 
     const reset = useCallback(() => {
         dispatch({
             type: ActionType.RESET,
         });
     }, []);
+    const syncState = useCallback(() => {
+        pristineDispatch({
+            type: ActionType.SET_STATE,
+            payload: reducerState,
+        });
+    }, [reducerState]);
 
     const setState = useCallback((state: ExplorerReduceState) => {
+        pristineDispatch({
+            type: ActionType.SET_STATE,
+            payload: state,
+        });
         dispatch({
             type: ActionType.SET_STATE,
             payload: state,
@@ -324,9 +412,14 @@ export const ExplorerProvider: FC = ({ children }) => {
             () => ({ ...reducerState, activeFields, isValidQuery }),
             [reducerState, activeFields, isValidQuery],
         ),
+        pristineState: useMemo(
+            () => ({ ...pristineReducerState, activeFields, isValidQuery }),
+            [activeFields, isValidQuery, pristineReducerState],
+        ),
         actions: useMemo(
             () => ({
                 reset,
+                syncState,
                 setState,
                 setTableName,
                 toggleActiveField,
@@ -335,9 +428,11 @@ export const ExplorerProvider: FC = ({ children }) => {
                 setFilters,
                 setRowLimit,
                 setColumnOrder,
+                getFieldStatus,
             }),
             [
                 reset,
+                syncState,
                 setFilters,
                 setRowLimit,
                 setSortFields,
@@ -346,6 +441,7 @@ export const ExplorerProvider: FC = ({ children }) => {
                 toggleActiveField,
                 toggleSortField,
                 setColumnOrder,
+                getFieldStatus,
             ],
         ),
     };

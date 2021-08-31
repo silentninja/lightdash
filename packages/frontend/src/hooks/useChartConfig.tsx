@@ -11,6 +11,7 @@ import { UseQueryResult } from 'react-query';
 import { useSavedQuery } from './useSavedQuery';
 import { useTable } from './useTable';
 import { getDimensionFormatter } from './useColumns';
+import { useQueryResults } from './useQueryResults';
 
 const getDimensionFormatterByKey = (
     dimensions: CompiledDimension[],
@@ -108,9 +109,9 @@ const isValidSeriesLayout = (
 
 export const useChartConfig = (
     savedQueryUuid: string | undefined,
-    queryResults: UseQueryResult<ApiQueryResults, ApiError>,
 ): ChartConfig => {
     const { data } = useSavedQuery({ id: savedQueryUuid });
+    const queryResults = useQueryResults();
     const [seriesLayout, setSeriesLayout] = useState<SeriesLayout>(
         defaultLayout(queryResults),
     );

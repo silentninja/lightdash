@@ -31,6 +31,7 @@ import { RefreshButton } from './RefreshButton';
 import { useExplorer } from '../providers/ExplorerProvider';
 import { Section } from '../providers/TrackingProvider';
 import { SectionName } from '../types/Events';
+import { useQueryResults } from '../hooks/useQueryResults';
 
 const hexToRGB = (hex: string, alpha: number) => {
     // eslint-disable-next-line radix
@@ -54,17 +55,12 @@ const EmptyStateNoColumns = () => (
     </div>
 );
 
-type EmptyStateNoTableDataProps = {
-    queryResults: UseQueryResult<ApiQueryResults, ApiError>;
-};
-const EmptyStateNoTableData = ({
-    queryResults,
-}: EmptyStateNoTableDataProps) => (
+const EmptyStateNoTableData = () => (
     <Section name={SectionName.EMPTY_RESULTS_TABLE}>
         <div style={{ padding: '50px 0' }}>
             <NonIdealState
                 description="Click run query to see your results"
-                action={<RefreshButton queryResults={queryResults} />}
+                action={<RefreshButton />}
             />
         </div>
     </Section>
@@ -176,11 +172,9 @@ const Item: FC<ItemProps> = ({
     </div>
 );
 
-type ResultsTableProps = {
-    queryResults: UseQueryResult<ApiQueryResults, ApiError>;
-};
-export const ResultsTable = ({ queryResults }: ResultsTableProps) => {
+export const ResultsTable = () => {
     const dataColumns = useColumns();
+    const queryResults = useQueryResults();
     const {
         state: { tableName: activeTableName, columnOrder: explorerColumnOrder },
         actions: { setColumnOrder: setExplorerColumnOrder },
@@ -388,9 +382,7 @@ export const ResultsTable = ({ queryResults }: ResultsTableProps) => {
                         />
                     </>
                 )}
-                {queryResults.isIdle && (
-                    <EmptyStateNoTableData queryResults={queryResults} />
-                )}
+                {queryResults.isIdle && <EmptyStateNoTableData />}
                 {queryResults.status === 'success' &&
                     queryResults.data.rows.length === 0 && <EmptyStateNoRows />}
             </div>
